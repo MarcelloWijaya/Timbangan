@@ -3,27 +3,28 @@ package com.example.myapplication;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import android.widget.ImageView;
+import org.json.JSONException;
+
+
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ImageView canopyNotFilledImageView;
-    private ImageView canopyFilledImageView;
     private Button onButton;
     private Button startButton;
     private TextView textView;
-    private String statusCanopy = "tertutup";
-    private static final String ESP32_IP_ADDRESS = "192.168.0.100"; // Ganti dengan IP ESP32 Anda
-    private static final int ESP32_PORT = 80; // Ganti dengan port yang digunakan pada ESP32 Anda
+    private EditText target_weight;
+    private static final String MEGA_IP_ADDRESS = "192.168.0.100"; // Ganti dengan IP ESP32 Anda
+    private static final int MEGA_PORT = 80; // Ganti dengan port yang digunakan pada ESP32 Anda
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,32 +33,33 @@ public class MainActivity extends AppCompatActivity {
 
         textView = findViewById(R.id.connection);
         onButton = findViewById(R.id.onButton);
+        target_weight = findViewById(R.id.targetWeight);
         startButton = findViewById(R.id.startButton);
 
-        onButton.setOnTouchListener(new View.OnTouchListener() {
+        onButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // When the button is pressed, send the "open" instruction to Arduino
-                    new SendCommandTask().execute("OPEN");
-                } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                    // When the button is released, send the "stop" instruction to Arduino
-                    new SendCommandTask().execute("STOP OPEN");
-                }
-                return false;
+            public void onClick(View v) {
+                new SendCommandTask().execute("ON LOADCELL");
             }
         });
-        startButton.setOnTouchListener(new View.OnTouchListener() {
+
+        startButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // When the button is pressed, send the "open" instruction to Arduino
-                    new SendCommandTask().execute("CLOSE");
-                } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                    // When the button is released, send the "stop" instruction to Arduino
-                    new SendCommandTask().execute("STOP CLOSE");
+            public void onClick(View v) {
+                // Get the target weight value from the EditText
+                String targetWeightValue = target_weight.getText().toString();
+
+                // Create a JSON object with the target weight value
+                JSONObject jsonCommand = new JSONObject();
+                try {
+                    jsonCommand.put("target_weight", targetWeightValue);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    return; // Return if there's an error creating the JSON object
                 }
-                return false;
+
+                // Send the JSON command to the Arduino
+                new SendCommandTask().execute(jsonCommand.toString());
             }
         });
     }
@@ -67,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... commands) {
             try {
-                Socket socket = new Socket(ESP32_IP_ADDRESS, ESP32_PORT);
+                Socket socket = new Socket(MEGA_IP_ADDRESS, MEGA_PORT);
 
                 PrintWriter out = new PrintWriter(socket.getOutputStream());
                 out.println(commands[0]);
@@ -87,26 +89,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result) {
-
-            // Mengupdate status canopy berdasarkan hasil dari perintah yang dikirim
-            if (result.equalsIgnoreCase("Terbuka")) {
-                statusCanopy = "terbuka";
-            } else if (result.equalsIgnoreCase("Tertutup")) {
-                statusCanopy = "tertutup";
-            } else {
-                statusCanopy = "unknown"; // Jika status tidak dikenali atau terjadi kesalahan
-            }
-
-            // Memperbarui tampilan tombol berdasarkan status canopy
-            if ("terbuka".equals(statusCanopy)) {
-                canopyNotFilledImageView.setVisibility(View.GONE);
-                canopyFilledImageView.setVisibility(View.VISIBLE);
-            } else if ("tertutup".equals(statusCanopy)) {
-                canopyFilledImageView.setVisibility(View.GONE);
-                canopyNotFilledImageView.setVisibility(View.VISIBLE);
-            }
-
-            // Mengatur teks di textView dengan hasil dari perintah yang dikirim
             textView.setText("Hasil koneksi: " + result);
         }
     }
