@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
         textView = findViewById(R.id.connection);
         onButton = findViewById(R.id.onButton);
-        target_weight = findViewById(R.id.targetWeight);
+        target_weight = findViewById(R.id.motorSpeed);
         startButton = findViewById(R.id.startButton);
 
         onButton.setOnClickListener(new View.OnClickListener() {
