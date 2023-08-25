@@ -1,6 +1,8 @@
 package com.example.myapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
@@ -21,8 +23,10 @@ public class MainActivity extends AppCompatActivity {
 
     private Button onButton;
     private Button startButton;
+    private Button inverterButton;
     private TextView textView;
     private EditText target_weight;
+    private EditText start_speed;
     private static final String MEGA_IP_ADDRESS = "192.168.0.100"; // Ganti dengan IP ESP32 Anda
     private static final int MEGA_PORT = 80; // Ganti dengan port yang digunakan pada ESP32 Anda
 
@@ -33,7 +37,9 @@ public class MainActivity extends AppCompatActivity {
 
         textView = findViewById(R.id.connection);
         onButton = findViewById(R.id.onButton);
-        target_weight = findViewById(R.id.motorSpeed);
+        inverterButton = findViewById(R.id.ButtonInverter);
+        target_weight = findViewById(R.id.inputTargetWeight);
+        start_speed = findViewById(R.id.inputStartSpeed);
         startButton = findViewById(R.id.startButton);
 
         onButton.setOnClickListener(new View.OnClickListener() {
@@ -48,11 +54,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Get the target weight value from the EditText
                 String targetWeightValue = target_weight.getText().toString();
+                String startSpeedValue = start_speed.getText().toString();
 
                 // Create a JSON object with the target weight value
                 JSONObject jsonCommand = new JSONObject();
                 try {
                     jsonCommand.put("target_weight", targetWeightValue);
+                    jsonCommand.put("start_speed", startSpeedValue);
                 } catch (JSONException e) {
                     e.printStackTrace();
                     return; // Return if there's an error creating the JSON object
@@ -60,6 +68,14 @@ public class MainActivity extends AppCompatActivity {
 
                 // Send the JSON command to the Arduino
                 new SendCommandTask().execute(jsonCommand.toString());
+            }
+        });
+
+        inverterButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
+                startActivity(intent);
             }
         });
     }
